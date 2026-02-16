@@ -3,56 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Waiter</title>
+    <title>Smart Waiter Voice</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f4f4; }
-        .card { background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .icon { font-size: 50px; color: #4CAF50; }
-        h1 { color: #333; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        .icon { font-size: 50px; margin-bottom: 10px; }
+        textarea { width: 100%; border-radius: 10px; border: 1px solid #ccc; padding: 10px; font-size: 16px; margin-top: 15px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .btn-mic { background: #007bff; color: white; }
+        .btn-send { background: #28a745; color: white; }
+        .btn-mic:active { background: #004a99; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <div id="status">
-            <div class="icon">⏳</div>
-            <h1>Παρακαλώ περιμένετε...</h1>
-        </div>
-    </div>
 
-    <script>
-    // Τα στοιχεία σου
+<div class="card">
+    <div id="status">
+        <div class="icon">🍽️</div>
+        <h2 id="header-text">Τραπέζι <span id="table-num">--</span></h2>
+        <p>Γράψτε ή πείτε την παραγγελία σας:</p>
+        
+        <textarea id="order-text" rows="4" placeholder="π.χ. Δύο καφέδες μέτριους..."></textarea>
+        
+        <button class="btn-mic" onclick="startDictation()">🎤 Πείτε την παραγγελία</button>
+        <button class="btn-send" onclick="sendToTelegram()">🚀 Αποστολή στον Σερβιτόρο</button>
+    </div>
+</div>
+
+<script>
     const token = "8597389134:AAGpXgvvHgWg0SHhsQUiZF4Fsg0bq6XmoNA";
     const chatId = "8228642098";
-
-    // Διάβασμα παραμέτρων από το URL (π.χ. ?table=5&type=Order)
     const urlParams = new URLSearchParams(window.location.search);
-    const table = urlParams.get('table');
-    const type = urlParams.get('type') || "Κλήση";
+    const table = urlParams.get('table') || "Άγνωστο";
+    
+    document.getElementById('table-num').innerText = table;
 
-    // Έλεγχος: Στέλνουμε ειδοποίηση ΜΟΝΟ αν υπάρχει η παράμετρος table στο link
-    if (table) {
-        const message = `🔔 Ειδοποίηση!\nΤραπέζι: ${table}\nΤύπος: ${type}`;
+    // Λειτουργία Φωνής (Speech to Text)
+    function startDictation() {
+        if (window.hasOwnProperty('webkitSpeechRecognition')) {
+            var recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = "el-GR"; // Ελληνικά
+            recognition.start();
+
+            recognition.onresult = function(e) {
+                document.getElementById('order-text').value = e.results[0][0].transcript;
+                recognition.stop();
+            };
+
+            recognition.onerror = function(e) {
+                recognition.stop();
+                alert("Πρόβλημα με το μικρόφωνο. Δοκιμάστε να γράψετε.");
+            };
+        } else {
+            alert("Το πρόγραμμα περιήγησης δεν υποστηρίζει φωνητική εγγραφή.");
+        }
+    }
+
+    // Αποστολή στο Telegram
+    function sendToTelegram() {
+        const text = document.getElementById('order-text').value;
+        if (!text) { alert("Παρακαλώ γράψτε κάτι πρώτα!"); return; }
+
+        const message = `📝 Νέα Παραγγελία!\n📍 Τραπέζι: ${table}\n💬 Μήνυμα: ${text}`;
 
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
         .then(response => {
             document.getElementById('status').innerHTML = `
                 <div class="icon">✔️</div>
-                <h1>Ειδοποιήθηκε!</h1>
-                <p>Ο σερβιτόρος έρχεται στο τραπέζι <strong>${table}</strong></p>
+                <h1>Εστάλη!</h1>
+                <p>Ο σερβιτόρος έλαβε το μήνυμά σας.</p>
+                <button onclick="location.reload()" style="background:#6c757d; color:white;">Νέα Κλήση</button>
             `;
         })
-        .catch(error => {
-            document.getElementById('status').innerHTML = `<h1>Σφάλμα!</h1><p>Προσπαθήστε ξανά.</p>`;
-        });
-    } else {
-        // Τι θα βλέπει κάποιος αν μπει στο σκέτο link χωρίς να έχει σκανάρει τραπέζι
-        document.getElementById('status').innerHTML = `
-            <div class="icon">📖</div>
-            <h1>Καλώς ήρθατε!</h1>
-            <p>Παρακαλώ σκανάρετε το QR code που βρίσκεται στο τραπέζι σας για να καλέσετε τον σερβιτόρο.</p>
-        `;
     }
 </script>
-</body>
 
+</body>
 </html>
