@@ -39,13 +39,18 @@
     document.getElementById('table-num').innerText = table;
 
     // Λειτουργία Φωνής (Speech to Text)
-    function startDictation() {
-        if (window.hasOwnProperty('webkitSpeechRecognition')) {
-            var recognition = new webkitSpeechRecognition();
+   function startDictation() {
+        if (window.hasOwnProperty('webkitSpeechRecognition') || window.hasOwnProperty('speechRecognition')) {
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            var recognition = new SpeechRecognition();
+
             recognition.continuous = false;
             recognition.interimResults = false;
-            recognition.lang = "el-GR"; // Ελληνικά
-            recognition.start();
+            recognition.lang = "el-GR";
+
+            recognition.onstart = function() {
+                console.log("Το μικρόφωνο άνοιξε - Μιλήστε τώρα...");
+            };
 
             recognition.onresult = function(e) {
                 document.getElementById('order-text').value = e.results[0][0].transcript;
@@ -53,11 +58,13 @@
             };
 
             recognition.onerror = function(e) {
+                console.log("Σφάλμα: " + e.error);
                 recognition.stop();
-                alert("Πρόβλημα με το μικρόφωνο. Δοκιμάστε να γράψετε.");
+                // Εδώ θα μας πει ακριβώς τι φταίει (π.χ. αν φταίει η ησυχία ή η άδεια)
+                alert("Σφάλμα: " + e.error + ". Δοκιμάστε να μιλήσετε πιο γρήγορα ή δυνατά.");
             };
         } else {
-            alert("Το πρόγραμμα περιήγησης δεν υποστηρίζει φωνητική εγγραφή.");
+            alert("Ο browser σας δεν υποστηρίζει φωνητική εγγραφή. Χρησιμοποιήστε Chrome ή Safari.");
         }
     }
 
@@ -82,3 +89,4 @@
 
 </body>
 </html>
+
