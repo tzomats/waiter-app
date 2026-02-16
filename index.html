@@ -42,63 +42,62 @@
 
     function startDictation() {
         const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Δεν υποστηρίζεται στο κινητό σας.");
-            return;
-        }
+        if (!SpeechRecognition) return;
 
         recognition = new SpeechRecognition();
         recognition.lang = "el-GR";
-        recognition.interimResults = true; // Δείξε μου τι ακούς ΤΩΡΑ
-        recognition.continuous = true; // Μην κλείνεις αν δεν σου πω εγώ
+        recognition.interimResults = false; // Θέλουμε μόνο το τελικό για να μη στέλνει μισές κουβέντες
+        recognition.continuous = false; // Κλείσιμο αμέσως μετά την πρόταση
 
         recognition.onstart = function() {
             const btn = document.querySelector('.btn-mic');
             btn.style.background = "#ff4444";
-            btn.innerText = "🛑 Πάτα για Τέλος";
-            // Αλλάζουμε τη λειτουργία του κουμπιού όσο μιλάς
-            btn.onclick = stopDictation; 
+            btn.innerText = "🔴 Σας ακούω...";
         };
 
         recognition.onresult = function(event) {
-            let currentText = '';
-            for (let i = 0; i < event.results.length; i++) {
-                currentText += event.results[i][0].transcript;
-            }
-            document.getElementById('order-text').value = currentText;
+            const result = event.results[0][0].transcript;
+            document.getElementById('order-text').value = result;
+            
+            // ΚΛΕΙΣΕ ΤΟ ΜΙΚΡΟΦΩΝΟ ΑΜΕΣΩΣ (για να φύγει η τελεία)
+            recognition.stop();
+            
+            // ΑΥΤΟΜΑΤΗ ΑΠΟΣΤΟΛΗ ΜΕΤΑ ΑΠΟ 1 ΔΕΥΤΕΡΟΛΕΠΤΟ
+            setTimeout(() => {
+                sendToTelegram();
+            }, 1000);
         };
 
-        recognition.onerror = function(e) {
-            console.log("Error: " + e.error);
-            stopDictation();
+        recognition.onend = function() {
+            const btn = document.querySelector('.btn-mic');
+            btn.style.background = "#007bff";
+            btn.innerText = "🎤 Πείτε την παραγγελία";
         };
 
         recognition.start();
     }
 
-    function stopDictation() {
-        if (recognition) {
-            recognition.stop();
-            // Force terminate για το iPhone
-            setTimeout(() => { recognition.abort(); }, 500); 
-        }
-        const btn = document.querySelector('.btn-mic');
-        btn.style.background = "#007bff";
-        btn.innerText = "🎤 Πείτε την παραγγελία";
-        btn.onclick = startDictation;
-    }
-
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
-        if (!text) return;
-        const message = `📝 Παραγγελία!\n📍 Τραπέζι: ${table}\n💬: ${text}`;
+        if (!text || text === "...") return;
+
+        const message = `🎙️ ΦΩΝΗΤΙΚΗ ΠΑΡΑΓΓΕΛΙΑ\n📍 Τραπέζι: ${table}\n💬: ${text}`;
+
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
-        .then(() => location.reload());
+        .then(response => {
+            document.getElementById('status').innerHTML = `
+                <div class="icon">🚀</div>
+                <h1>Η παραγγελία εστάλη!</h1>
+                <p>Είπατε: "<b>${text}</b>"</p>
+                <button onclick="location.reload()" style="background:#6c757d; color:white;">Νέα Κλήση</button>
+            `;
+        });
     }
 </script>
-
+    
 </body>
 </html>
+
 
 
 
