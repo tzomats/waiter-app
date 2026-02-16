@@ -38,55 +38,51 @@
     
     document.getElementById('table-num').innerText = table;
 
-    function startDictation() {
-        // 1. Έλεγχος συμβατότητας για iPhone (Safari/Chrome iOS)
-        const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+    let isRecording = false; // Μεταβλητή για να ξέρουμε αν ήδη γράφει
 
-        if (!SpeechRecognition) {
-            alert("Το iPhone σας δεν επιτρέπει την αναγνώριση φωνής σε αυτόν τον browser. Δοκιμάστε με Safari.");
-            return;
-        }
+function startDictation() {
+    if (isRecording) return; // Αν γράφει ήδη, μην κάνεις τίποτα
 
-        const recognition = new SpeechRecognition();
-        
-        // 2. Ρυθμίσεις
-        recognition.lang = "el-GR";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        // 3. Ενέργειες την ώρα που ξεκινάει
-        recognition.onstart = function() {
-            const btn = document.querySelector('.btn-mic');
-            btn.style.background = "#ff4444";
-            btn.innerText = "🔴 Ακούω... Μιλήστε";
-        };
-
-        // 4. Αποτέλεσμα
-        recognition.onresult = function(event) {
-            const result = event.results[0][0].transcript;
-            document.getElementById('order-text').value = result;
-        };
-
-        // 5. Διαχείριση Σφαλμάτων
-        recognition.onerror = function(event) {
-            alert("Σφάλμα: " + event.error);
-        };
-
-        // 6. Επαναφορά κουμπιού στο τέλος
-        recognition.onend = function() {
-            const btn = document.querySelector('.btn-mic');
-            btn.style.background = "#007bff";
-            btn.innerText = "🎤 Πείτε την παραγγελία";
-        };
-
-        // 7. ΕΚΚΙΝΗΣΗ
-        try {
-            recognition.start();
-        } catch (e) {
-            alert("Παρουσιάστηκε πρόβλημα: " + e.message);
-        }
+    const SpeechRecognition = window.webkitSpeechRecognition || window.Recognition;
+    if (!SpeechRecognition) {
+        alert("Ο browser δεν υποστηρίζει φωνητική εγγραφή. Δοκιμάστε Safari.");
+        return;
     }
 
+    const recognition = new SpeechRecognition();
+    recognition.lang = "el-GR";
+    recognition.interimResults = false;
+    recognition.continuous = false; // Στο iPhone πρέπει να είναι false
+
+    recognition.onstart = function() {
+        isRecording = true;
+        const btn = document.querySelector('.btn-mic');
+        btn.style.background = "#ff4444";
+        btn.innerText = "🔴 Ακούω... Μιλήστε";
+    };
+
+    recognition.onresult = function(event) {
+        const result = event.results[0][0].transcript;
+        document.getElementById('order-text').value = result;
+        isRecording = false;
+    };
+
+    recognition.onerror = function(event) {
+        if (event.error !== 'aborted') {
+            alert("Σφάλμα: " + event.error);
+        }
+        isRecording = false;
+    };
+
+    recognition.onend = function() {
+        isRecording = false;
+        const btn = document.querySelector('.btn-mic');
+        btn.style.background = "#007bff";
+        btn.innerText = "🎤 Πείτε την παραγγελία";
+    };
+
+    recognition.start();
+}
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
         if (!text) { alert("Παρακαλώ γράψτε κάτι πρώτα!"); return; }
@@ -107,6 +103,7 @@
 
 </body>
 </html>
+
 
 
 
