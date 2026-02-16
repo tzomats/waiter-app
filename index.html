@@ -41,96 +41,65 @@
     let recognition;
 
     function startDictation() {
-        // Καθαρίζουμε αν υπήρχε προηγούμενη προσπάθεια
-        if (recognition) {
-            recognition.abort();
-        }
-
         const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-        
         if (!SpeechRecognition) {
-            alert("Το Speech API δεν υποστηρίζεται σε αυτόν τον browser. Δοκιμάστε Safari.");
+            alert("Δεν υποστηρίζεται στο κινητό σας.");
             return;
         }
 
         recognition = new SpeechRecognition();
-    recognition.lang = "el-GR";
-    recognition.interimResults = true; 
-    recognition.maxAlternatives = 1;
+        recognition.lang = "el-GR";
+        recognition.interimResults = true; // Δείξε μου τι ακούς ΤΩΡΑ
+        recognition.continuous = true; // Μην κλείνεις αν δεν σου πω εγώ
 
-    recognition.onstart = function() {
-        document.querySelector('.btn-mic').style.background = "#ff4444";
-        document.querySelector('.btn-mic').innerText = "🔴 Ακούω... Μιλήστε";
-        
-        // Timeout 7 δευτερολέπτων: Αν δεν μιλήσει κανείς, κλείστο για να σβήσει η τελεία
-        silenceTimer = setTimeout(() => {
-            if (recognition) recognition.stop();
-        }, 7000);
-    };
+        recognition.onstart = function() {
+            const btn = document.querySelector('.btn-mic');
+            btn.style.background = "#ff4444";
+            btn.innerText = "🛑 Πάτα για Τέλος";
+            // Αλλάζουμε τη λειτουργία του κουμπιού όσο μιλάς
+            btn.onclick = stopDictation; 
+        };
 
-    // ΑΥΤΟ ΤΟ ΚΟΜΜΑΤΙ ΑΝΤΙΚΑΘΙΣΤΑΣ:
-    recognition.onresult = function(event) {
-        clearTimeout(silenceTimer); 
-        
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript;
-            } else {
-                interimTranscript += event.results[i][0].transcript;
+        recognition.onresult = function(event) {
+            let currentText = '';
+            for (let i = 0; i < event.results.length; i++) {
+                currentText += event.results[i][0].transcript;
             }
-        }
+            document.getElementById('order-text').value = currentText;
+        };
 
-        // Ενημέρωση του Textarea σε πραγματικό χρόνο
-        const resultText = finalTranscript || interimTranscript;
-        if (resultText) {
-            document.getElementById('order-text').value = resultText;
-        }
+        recognition.onerror = function(e) {
+            console.log("Error: " + e.error);
+            stopDictation();
+        };
 
-        // Αν το αποτέλεσμα είναι τελικό, κλείνουμε το μικρόφωνο ΑΜΕΣΩΣ
-        if (finalTranscript) {
+        recognition.start();
+    }
+
+    function stopDictation() {
+        if (recognition) {
             recognition.stop();
+            // Force terminate για το iPhone
+            setTimeout(() => { recognition.abort(); }, 500); 
         }
-    };
-
-    recognition.onend = function() {
-        document.querySelector('.btn-mic').style.background = "#007bff";
-        document.querySelector('.btn-mic').innerText = "🎤 Πείτε την παραγγελία";
-        isRecording = false;
-        // Εδώ η πορτοκαλί τελεία θα πρέπει να σβήνει
-    };
-
-    recognition.onerror = function(event) {
-        console.log("Σφάλμα: " + event.error);
-        clearTimeout(silenceTimer);
-        isRecording = false;
-    };
-
-    recognition.start();
+        const btn = document.querySelector('.btn-mic');
+        btn.style.background = "#007bff";
+        btn.innerText = "🎤 Πείτε την παραγγελία";
+        btn.onclick = startDictation;
     }
 
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
-        if (!text) { alert("Παρακαλώ γράψτε κάτι πρώτα!"); return; }
-
-        const message = `📝 Νέα Παραγγελία!\n📍 Τραπέζι: ${table}\n💬 Μήνυμα: ${text}`;
-
+        if (!text) return;
+        const message = `📝 Παραγγελία!\n📍 Τραπέζι: ${table}\n💬: ${text}`;
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
-        .then(response => {
-            document.getElementById('status').innerHTML = `
-                <div class="icon">✔️</div>
-                <h1>Εστάλη!</h1>
-                <p>Ο σερβιτόρος έλαβε το μήνυμά σας.</p>
-                <button onclick="location.reload()" style="background:#6c757d; color:white;">Νέα Κλήση</button>
-            `;
-        });
+        .then(() => location.reload());
     }
 </script>
 
 </body>
 </html>
+
 
 
 
