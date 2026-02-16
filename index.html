@@ -54,36 +54,61 @@
         }
 
         recognition = new SpeechRecognition();
-        recognition.lang = "el-GR";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+    recognition.lang = "el-GR";
+    recognition.interimResults = true; 
+    recognition.maxAlternatives = 1;
 
-        recognition.onstart = function() {
-            const btn = document.querySelector('.btn-mic');
-            btn.style.background = "#ff4444";
-            btn.innerText = "🔴 Ακούω... Μιλήστε";
-        };
+    recognition.onstart = function() {
+        document.querySelector('.btn-mic').style.background = "#ff4444";
+        document.querySelector('.btn-mic').innerText = "🔴 Ακούω... Μιλήστε";
+        
+        // Timeout 7 δευτερολέπτων: Αν δεν μιλήσει κανείς, κλείστο για να σβήσει η τελεία
+        silenceTimer = setTimeout(() => {
+            if (recognition) recognition.stop();
+        }, 7000);
+    };
 
-        recognition.onresult = function(event) {
-            const result = event.results[0][0].transcript;
-            document.getElementById('order-text').value = result;
-        };
+    // ΑΥΤΟ ΤΟ ΚΟΜΜΑΤΙ ΑΝΤΙΚΑΘΙΣΤΑΣ:
+    recognition.onresult = function(event) {
+        clearTimeout(silenceTimer); 
+        
+        let interimTranscript = '';
+        let finalTranscript = '';
 
-        recognition.onerror = function(event) {
-            console.log("Error logic: " + event.error);
-            // Αν σου βγάλει 'not-allowed' στον Chrome, φταίνε οι ρυθμίσεις του iPhone
-            if(event.error === 'not-allowed') {
-                alert("Πρέπει να δώσετε άδεια στο μικρόφωνο από τις Ρυθμίσεις του iPhone για τον Chrome.");
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            } else {
+                interimTranscript += event.results[i][0].transcript;
             }
-        };
+        }
 
-        recognition.onend = function() {
-            const btn = document.querySelector('.btn-mic');
-            btn.style.background = "#007bff";
-            btn.innerText = "🎤 Πείτε την παραγγελία";
-        };
+        // Ενημέρωση του Textarea σε πραγματικό χρόνο
+        const resultText = finalTranscript || interimTranscript;
+        if (resultText) {
+            document.getElementById('order-text').value = resultText;
+        }
 
-        recognition.start();
+        // Αν το αποτέλεσμα είναι τελικό, κλείνουμε το μικρόφωνο ΑΜΕΣΩΣ
+        if (finalTranscript) {
+            recognition.stop();
+        }
+    };
+
+    recognition.onend = function() {
+        document.querySelector('.btn-mic').style.background = "#007bff";
+        document.querySelector('.btn-mic').innerText = "🎤 Πείτε την παραγγελία";
+        isRecording = false;
+        // Εδώ η πορτοκαλί τελεία θα πρέπει να σβήνει
+    };
+
+    recognition.onerror = function(event) {
+        console.log("Σφάλμα: " + event.error);
+        clearTimeout(silenceTimer);
+        isRecording = false;
+    };
+
+    recognition.start();
     }
 
     function sendToTelegram() {
@@ -106,6 +131,7 @@
 
 </body>
 </html>
+
 
 
 
