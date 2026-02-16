@@ -3,113 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Waiter</title>
+    <title>Smart Waiter Voice</title>
     <style>
-        :root {
-            --primary: #4361ee;
-            --secondary: #3f37c9;
-            --success: #4cc9f0;
-            --danger: #f72585;
-            --warning: #f9c74f;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #1f2937;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 380px;
-            text-align: center;
-        }
-
-        .table-info {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary);
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        h1 { font-size: 24px; margin-top: 0; color: #111827; }
-
-        textarea {
-            width: 100%;
-            height: 100px;
-            border: 2px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 15px;
-            font-size: 16px;
-            margin: 15px 0;
-            box-sizing: border-box;
-            outline: none;
-            transition: all 0.3s;
-            background: #f9fafb;
-        }
-
-        textarea:focus { border-color: var(--primary); background: white; }
-
-        .btn {
-            width: 100%;
-            padding: 16px;
-            margin-bottom: 12px;
-            border: none;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-mic { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3); }
-        .btn-send { background: #10b981; color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); }
-        .btn-waiter { background: #f59e0b; color: white; margin-top: 10px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); }
-
-        .btn:active { transform: scale(0.96); }
-
-        .footer-text { font-size: 12px; color: #9ca3af; margin-top: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        .icon { font-size: 50px; margin-bottom: 10px; }
+        textarea { width: 100%; border-radius: 10px; border: 1px solid #ccc; padding: 10px; font-size: 16px; margin-top: 15px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        .btn-mic { background: #007bff; color: white; }
+        .btn-send { background: #28a745; color: white; }
+        .btn-mic:active { background: #004a99; }
     </style>
 </head>
 <body>
 
-<div class="container" id="app">
-    <div class="table-info">ΤΡΑΠΕΖΙ <span id="table-num">0</span></div>
-    <h1>Παραγγελία</h1>
-
-    <textarea id="order-text" placeholder="Πείτε την παραγγελία σας..."></textarea>
-
-    <button class="btn btn-mic" id="mic-btn" onclick="toggleMic()">
-        <span id="mic-icon">🎤</span> <span id="mic-label">Ξεκινήστε την Ομιλία</span>
-    </button>
-
-    <button class="btn btn-send" onclick="sendOrder()">
-        <span>🚀</span> Αποστολή
-    </button>
-
-    <div style="height: 1px; background: #eee; margin: 20px 0;"></div>
-
-    <button class="btn btn-waiter" onclick="callWaiter()">
-        <span>🔔</span> Κλήση Σερβιτόρου
-    </button>
-
-    <div class="footer-text">Powered by Smart Waiter API</div>
+<div class="card">
+    <div id="status">
+        <div class="icon">🍽️</div>
+        <h2 id="header-text">Τραπέζι <span id="table-num">--</span></h2>
+        <p>Γράψτε ή πείτε την παραγγελία σας:</p>
+        
+        <textarea id="order-text" rows="4" placeholder="π.χ. Δύο καφέδες μέτριους..."></textarea>
+        
+        <button class="btn-mic" onclick="startDictation()">🎤 Πείτε την παραγγελία</button>
+        <button class="btn-send" onclick="sendToTelegram()">🚀 Αποστολή στον Σερβιτόρο</button>
+    </div>
 </div>
 
 <script>
@@ -117,87 +35,50 @@
     const chatId = "8228642098";
     const urlParams = new URLSearchParams(window.location.search);
     const table = urlParams.get('table') || "Άγνωστο";
+    
     document.getElementById('table-num').innerText = table;
 
-    let recognition;
-    let isRecording = false;
-
-    function toggleMic() {
-        const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-        if (!SpeechRecognition) return alert("Ο browser δεν υποστηρίζει φωνή.");
-
-        if (!isRecording) {
-            recognition = new SpeechRecognition();
-            recognition.lang = "el-GR";
-            recognition.interimResults = true;
-            recognition.continuous = true;
-
-            recognition.onstart = () => {
-                isRecording = true;
-                updateMicUI(true);
-            };
-
-            recognition.onresult = (event) => {
-                let text = "";
-                for (let i = 0; i < event.results.length; i++) {
-                    text += event.results[i][0].transcript;
-                }
-                document.getElementById('order-text').value = text;
-            };
-
+    // Λειτουργία Φωνής (Speech to Text)
+    function startDictation() {
+        if (window.hasOwnProperty('webkitSpeechRecognition')) {
+            var recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = "el-GR"; // Ελληνικά
             recognition.start();
+
+            recognition.onresult = function(e) {
+                document.getElementById('order-text').value = e.results[0][0].transcript;
+                recognition.stop();
+            };
+
+            recognition.onerror = function(e) {
+                recognition.stop();
+                alert("Πρόβλημα με το μικρόφωνο. Δοκιμάστε να γράψετε.");
+            };
         } else {
-            stopMic();
+            alert("Το πρόγραμμα περιήγησης δεν υποστηρίζει φωνητική εγγραφή.");
         }
     }
 
-    function stopMic() {
-        if (recognition) {
-            recognition.stop();
-            setTimeout(() => { 
-                recognition.abort(); 
-                recognition = null; 
-                isRecording = false;
-                updateMicUI(false);
-            }, 300);
-        }
-    }
-
-    function updateMicUI(recording) {
-        const btn = document.getElementById('mic-btn');
-        const label = document.getElementById('mic-label');
-        const icon = document.getElementById('mic-icon');
-        if (recording) {
-            btn.style.background = "#f72585";
-            label.innerText = "ΤΕΛΟΣ (Πατήστε)";
-            icon.innerText = "🛑";
-        } else {
-            btn.style.background = "#4361ee";
-            label.innerText = "Ξεκινήστε την Ομιλία";
-            icon.innerText = "🎤";
-        }
-    }
-
-    function callWaiter() { sendToTelegram(`🔔 ΚΛΗΣΗ ΣΕΡΒΙΤΟΡΟΥ\n📍 Τραπέζι: ${table}`, "Ο σερβιτόρος ειδοποιήθηκε!"); }
-    function sendOrder() {
+    // Αποστολή στο Telegram
+    function sendToTelegram() {
         const text = document.getElementById('order-text').value;
-        if (!text) return alert("Πείτε κάτι πρώτα!");
-        sendToTelegram(`📝 ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ\n📍 Τραπέζι: ${table}\n💬: ${text}`, "Η παραγγελία εστάλη!");
-    }
+        if (!text) { alert("Παρακαλώ γράψτε κάτι πρώτα!"); return; }
 
-    function sendToTelegram(msg, successMsg) {
-        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}`)
-        .then(() => {
-            document.getElementById('app').innerHTML = `
-                <div style="padding:40px 0;">
-                    <div style="font-size:60px; margin-bottom:20px;">✅</div>
-                    <h2 style="margin:0;">${successMsg}</h2>
-                    <p style="color:#666;">Ευχαριστούμε πολύ!</p>
-                    <button class="btn btn-mic" onclick="location.reload()" style="margin-top:20px;">Νέα Ενέργεια</button>
-                </div>`;
-        });
+        const message = `📝 Νέα Παραγγελία!\n📍 Τραπέζι: ${table}\n💬 Μήνυμα: ${text}`;
+
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
+        .then(response => {
+            document.getElementById('status').innerHTML = `
+                <div class="icon">✔️</div>
+                <h1>Εστάλη!</h1>
+                <p>Ο σερβιτόρος έλαβε το μήνυμά σας.</p>
+                <button onclick="location.reload()" style="background:#6c757d; color:white;">Νέα Κλήση</button>
+            `;
+        })
     }
 </script>
+
 </body>
 </html>
-
