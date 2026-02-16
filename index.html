@@ -20,29 +20,39 @@
     </div>
 
     <script>
-        // Τα στοιχεία σου
-        const token = "8597389134:AAGpXgvvHgWg0SHhsQUiZF4Fsg0bq6XmoNA";
-        const chatId = "8228642098";
+    // Τα στοιχεία σου
+    const token = "8597389134:AAGpXgvvHgWg0SHhsQUiZF4Fsg0bq6XmoNA";
+    const chatId = "8228642098";
 
-        // Διάβασμα παραμέτρων από το URL (π.χ. ?table=5&type=Order)
-        const urlParams = new URLSearchParams(window.location.search);
-        const table = urlParams.get('table') || "Άγνωστο";
-        const type = urlParams.get('type') || "Κλήση";
+    // Διάβασμα παραμέτρων από το URL (π.χ. ?table=5&type=Order)
+    const urlParams = new URLSearchParams(window.location.search);
+    const table = urlParams.get('table');
+    const type = urlParams.get('type') || "Κλήση";
 
+    // Έλεγχος: Στέλνουμε ειδοποίηση ΜΟΝΟ αν υπάρχει η παράμετρος table στο link
+    if (table) {
         const message = `🔔 Ειδοποίηση!\nΤραπέζι: ${table}\nΤύπος: ${type}`;
 
-        // Αποστολή στο Telegram
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
         .then(response => {
             document.getElementById('status').innerHTML = `
                 <div class="icon">✔️</div>
                 <h1>Ειδοποιήθηκε!</h1>
-                <p>Ο σερβιτόρος έρχεται στο τραπέζι ${table}</p>
+                <p>Ο σερβιτόρος έρχεται στο τραπέζι <strong>${table}</strong></p>
             `;
         })
         .catch(error => {
             document.getElementById('status').innerHTML = `<h1>Σφάλμα!</h1><p>Προσπαθήστε ξανά.</p>`;
         });
-    </script>
+    } else {
+        // Τι θα βλέπει κάποιος αν μπει στο σκέτο link χωρίς να έχει σκανάρει τραπέζι
+        document.getElementById('status').innerHTML = `
+            <div class="icon">📖</div>
+            <h1>Καλώς ήρθατε!</h1>
+            <p>Παρακαλώ σκανάρετε το QR code που βρίσκεται στο τραπέζι σας για να καλέσετε τον σερβιτόρο.</p>
+        `;
+    }
+</script>
 </body>
+
 </html>
