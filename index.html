@@ -38,65 +38,54 @@
     
     document.getElementById('table-num').innerText = table;
 
-   let isRecording = false;
+    let recognition;
 
-function startDictation() {
-    if (isRecording) return;
+    function startDictation() {
+        // Καθαρίζουμε αν υπήρχε προηγούμενη προσπάθεια
+        if (recognition) {
+            recognition.abort();
+        }
 
-    const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-    if (!SpeechRecognition) {
-        alert("Ο browser δεν υποστηρίζει φωνητική εγγραφή.");
-        return;
-    }
+        const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            alert("Το Speech API δεν υποστηρίζεται σε αυτόν τον browser. Δοκιμάστε Safari.");
+            return;
+        }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "el-GR";
-    recognition.continuous = false; 
-    recognition.interimResults = true; // Εμφάνιση κειμένου την ώρα που μιλάς
+        recognition = new SpeechRecognition();
+        recognition.lang = "el-GR";
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
 
-    recognition.onstart = function() {
-        isRecording = true;
-        const btn = document.querySelector('.btn-mic');
-        btn.style.background = "#ff4444";
-        btn.innerText = "🔴 Σας ακούω...";
-    };
+        recognition.onstart = function() {
+            const btn = document.querySelector('.btn-mic');
+            btn.style.background = "#ff4444";
+            btn.innerText = "🔴 Ακούω... Μιλήστε";
+        };
 
-    recognition.onresult = function(event) {
-        // Παίρνουμε ό,τι έχει καταγραφεί μέχρι εκείνη τη στιγμή
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-            if (event.results[i].isFinal) {
-                finalTranscript += event.results[i][0].transcript;
-            } else {
-                // Προσωρινό κείμενο όσο μιλάς
-                document.getElementById('order-text').value = event.results[i][0].transcript;
+        recognition.onresult = function(event) {
+            const result = event.results[0][0].transcript;
+            document.getElementById('order-text').value = result;
+        };
+
+        recognition.onerror = function(event) {
+            console.log("Error logic: " + event.error);
+            // Αν σου βγάλει 'not-allowed' στον Chrome, φταίνε οι ρυθμίσεις του iPhone
+            if(event.error === 'not-allowed') {
+                alert("Πρέπει να δώσετε άδεια στο μικρόφωνο από τις Ρυθμίσεις του iPhone για τον Chrome.");
             }
-        }
-        if (finalTranscript) {
-            document.getElementById('order-text').value = finalTranscript;
-            recognition.stop(); // Αναγκάζουμε το σταμάτημα μόλις έχουμε τελικό αποτέλεσμα
-        }
-    };
+        };
 
-    recognition.onerror = function(event) {
-        console.log("Error: " + event.error);
-        isRecording = false;
-    };
+        recognition.onend = function() {
+            const btn = document.querySelector('.btn-mic');
+            btn.style.background = "#007bff";
+            btn.innerText = "🎤 Πείτε την παραγγελία";
+        };
 
-    recognition.onend = function() {
-        isRecording = false;
-        const btn = document.querySelector('.btn-mic');
-        btn.style.background = "#007bff";
-        btn.innerText = "🎤 Πείτε την παραγγελία";
-    };
-
-    try {
         recognition.start();
-    } catch (e) {
-        console.log(e);
-        isRecording = false;
     }
-}
+
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
         if (!text) { alert("Παρακαλώ γράψτε κάτι πρώτα!"); return; }
@@ -117,6 +106,7 @@ function startDictation() {
 
 </body>
 </html>
+
 
 
 
