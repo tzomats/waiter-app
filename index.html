@@ -80,27 +80,27 @@
 
     function stopMic() {
         if (recognition) {
+            // 1. Σταματάμε την αναγνώριση λόγου
             recognition.stop();
             
-            // 1. Force Abort: Διακόπτει την επικοινωνία με τους servers
             setTimeout(() => { 
+                // 2. "Σκοτώνουμε" το αντικείμενο
                 recognition.abort(); 
-                
-                // 2. Kill the object: Αποδεσμεύει τη μνήμη
                 recognition = null; 
                 
+                // 3. ΕΠΙΘΕΤΙΚΟ ΚΛΕΙΣΙΜΟ: Ψάχνουμε όλες τις ανοιχτές συνδέσεις μικροφώνου και τις κόβουμε
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    stream.getTracks().forEach(track => track.stop());
+                }).catch(err => console.log("Μικρόφωνο ήδη κλειστό"));
+
                 isRecording = false;
                 const btn = document.querySelector('.btn-mic');
                 btn.style.background = "#007bff";
                 btn.innerText = "🎤 Πείτε την παραγγελία";
-                
-                // 3. Η "Πυρηνική" εντολή: Σταματάει κάθε χρήση μικροφώνου στη σελίδα
-                if (window.localStream) {
-                    window.localStream.getTracks().forEach(track => track.stop());
-                }
-            }, 400);
+            }, 300);
         }
     }
+    
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
         if (!text) { alert("Παρακαλώ πείτε κάτι πρώτα!"); return; }
@@ -117,6 +117,7 @@
     
 </body>
 </html>
+
 
 
 
