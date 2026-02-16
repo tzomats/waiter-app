@@ -39,75 +39,76 @@
     document.getElementById('table-num').innerText = table;
 
     let recognition;
+    let isRecording = false;
 
     function startDictation() {
         const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Ο browser δεν υποστηρίζει φωνή.");
-            return;
-        }
+        
+        if (!isRecording) {
+            // ΕΝΑΡΞΗ
+            recognition = new SpeechRecognition();
+            recognition.lang = "el-GR";
+            recognition.interimResults = true;
+            recognition.continuous = true;
 
-        recognition = new SpeechRecognition();
-        recognition.lang = "el-GR";
-        recognition.interimResults = true; // Αυτό είναι που σου έγραφε το κείμενο καθώς μιλούσες
-        recognition.continuous = false;
+            recognition.onstart = function() {
+                isRecording = true;
+                const btn = document.querySelector('.btn-mic');
+                btn.style.background = "#ff4444";
+                btn.innerText = "🛑 ΤΕΛΟΣ (Πατήστε εδώ)";
+            };
 
-        recognition.onstart = function() {
-            const btn = document.querySelector('.btn-mic');
-            btn.style.background = "#ff4444";
-            btn.innerText = "🔴 Ακούω...";
-        };
-
-        recognition.onresult = function(event) {
-            let interimTranscript = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    document.getElementById('order-text').value = event.results[i][0].transcript;
-                } else {
-                    interimTranscript += event.results[i][0].transcript;
-                    document.getElementById('order-text').value = interimTranscript;
+            recognition.onresult = function(event) {
+                let text = "";
+                for (let i = 0; i < event.results.length; i++) {
+                    text += event.results[i][0].transcript;
                 }
-            }
-        };
+                document.getElementById('order-text').value = text;
+            };
 
-        recognition.onerror = function(event) {
-            console.log("Error: " + event.error);
-            stopEverything();
-        };
+            recognition.onerror = function(e) {
+                console.log("Error: " + e.error);
+                stopMic();
+            };
 
-        recognition.onend = function() {
-            stopEverything();
-        };
-
-        recognition.start();
+            recognition.start();
+        } else {
+            // ΣΤΑΜΑΤΗΜΑ (Δεύτερο πάτημα)
+            stopMic();
+        }
     }
 
-    function stopEverything() {
+    function stopMic() {
         if (recognition) {
             recognition.stop();
-            recognition.abort(); // Force κλείσιμο για το iPhone
+            // Αυτό εδώ "σκοτώνει" την πορτοκαλί τελεία στο iPhone
+            setTimeout(() => { 
+                if(recognition) recognition.abort(); 
+                isRecording = false;
+                const btn = document.querySelector('.btn-mic');
+                btn.style.background = "#007bff";
+                btn.innerText = "🎤 Πείτε την παραγγελία";
+            }, 300);
         }
-        const btn = document.querySelector('.btn-mic');
-        btn.style.background = "#007bff";
-        btn.innerText = "🎤 Πείτε την παραγγελία";
     }
 
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
-        if (!text) { alert("Γράψτε κάτι!"); return; }
+        if (!text) { alert("Παρακαλώ πείτε κάτι πρώτα!"); return; }
 
         const message = `📝 Παραγγελία\n📍 Τραπέζι: ${table}\n💬: ${text}`;
 
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
         .then(() => {
-            alert("Εστάλη!");
-            location.reload(); // Η ανανέωση της σελίδας ΕΓΓΥΑΤΑΙ ότι η τελεία θα σβήσει
+            alert("Η παραγγελία εστάλη!");
+            location.reload(); // Φρεσκάρισμα για να είμαστε σίγουροι ότι όλα έκλεισαν
         });
     }
 </script>
     
 </body>
 </html>
+
 
 
 
