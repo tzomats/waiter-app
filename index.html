@@ -40,34 +40,54 @@
 
     // Λειτουργία Φωνής (Speech to Text)
    function startDictation() {
-        if (window.hasOwnProperty('webkitSpeechRecognition') || window.hasOwnProperty('speechRecognition')) {
-            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            var recognition = new SpeechRecognition();
+    // Καθαρισμός προηγούμενων μηνυμάτων
+    console.log("Έναρξη αναγνώρισης...");
 
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = "el-GR";
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-            recognition.onstart = function() {
-                console.log("Το μικρόφωνο άνοιξε - Μιλήστε τώρα...");
-            };
-
-            recognition.onresult = function(e) {
-                document.getElementById('order-text').value = e.results[0][0].transcript;
-                recognition.stop();
-            };
-
-            recognition.onerror = function(e) {
-                console.log("Σφάλμα: " + e.error);
-                recognition.stop();
-                // Εδώ θα μας πει ακριβώς τι φταίει (π.χ. αν φταίει η ησυχία ή η άδεια)
-                alert("Σφάλμα: " + e.error + ". Δοκιμάστε να μιλήσετε πιο γρήγορα ή δυνατά.");
-            };
-        } else {
-            alert("Ο browser σας δεν υποστηρίζει φωνητική εγγραφή. Χρησιμοποιήστε Chrome ή Safari.");
-        }
+    if (!SpeechRecognition) {
+        alert("Ο browser δεν υποστηρίζει Speech Recognition. Χρησιμοποιήστε Safari ή Chrome ενημερωμένο.");
+        return;
     }
 
+    const recognition = new SpeechRecognition();
+    
+    recognition.lang = "el-GR";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = false; // Σημαντικό για iOS
+
+    recognition.start();
+
+    recognition.onstart = function() {
+        // Άλλαξε το χρώμα του κουμπιού για να ξέρει ο χρήστης ότι γράφει
+        document.querySelector('.btn-mic').style.background = "red";
+        document.querySelector('.btn-mic').innerText = "🔴 Ακούω... Μιλήστε";
+    };
+
+    recognition.onresult = function(event) {
+        const result = event.results[0][0].transcript;
+        document.getElementById('order-text').value = result;
+        recognition.stop();
+    };
+
+    recognition.onerror = function(event) {
+        console.log("Error: " + event.error);
+        // Αν βγάλει 'not-allowed', φταίνε οι ρυθμίσεις του Safari/Chrome
+        // Αν βγάλει 'no-speech', απλά δεν άκουσε τίποτα
+        alert("Σφάλμα: " + event.error);
+        resetMicButton();
+    };
+
+    recognition.onend = function() {
+        resetMicButton();
+    };
+
+    function resetMicButton() {
+        document.querySelector('.btn-mic').style.background = "#007bff";
+        document.querySelector('.btn-mic').innerText = "🎤 Πείτε την παραγγελία";
+    }
+}
     // Αποστολή στο Telegram
     function sendToTelegram() {
         const text = document.getElementById('order-text').value;
@@ -89,4 +109,5 @@
 
 </body>
 </html>
+
 
