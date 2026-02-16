@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Waiter</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f4f4; }
+        .card { background: white; padding: 30px; border-radius: 20px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .icon { font-size: 50px; color: #4CAF50; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div id="status">
+            <div class="icon">⏳</div>
+            <h1>Παρακαλώ περιμένετε...</h1>
+        </div>
+    </div>
+
+    <script>
+        // Τα στοιχεία σου
+        const token = "8597389134:AAGpXgvvHgWg0SHhsQUiZF4Fsg0bq6XmoNA";
+        const chatId = "8228642098";
+
+        // Διάβασμα παραμέτρων από το URL (π.χ. ?table=5&type=Order)
+        const urlParams = new URLSearchParams(window.location.search);
+        const table = urlParams.get('table') || "Άγνωστο";
+        const type = urlParams.get('type') || "Κλήση";
+
+        const message = `🔔 Ειδοποίηση!\nΤραπέζι: ${table}\nΤύπος: ${type}`;
+
+        // Αποστολή στο Telegram
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
+        .then(response => {
+            document.getElementById('status').innerHTML = `
+                <div class="icon">✔️</div>
+                <h1>Ειδοποιήθηκε!</h1>
+                <p>Ο σερβιτόρος έρχεται στο τραπέζι ${table}</p>
+            `;
+        })
+        .catch(error => {
+            document.getElementById('status').innerHTML = `<h1>Σφάλμα!</h1><p>Προσπαθήστε ξανά.</p>`;
+        });
+    </script>
+</body>
+</html>
