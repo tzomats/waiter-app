@@ -44,29 +44,41 @@
         const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
         if (!SpeechRecognition) return;
 
-        recognition = new SpeechRecognition();
-        recognition.lang = "el-GR";
-        recognition.interimResults = false; // Θέλουμε μόνο το τελικό για να μη στέλνει μισές κουβέντες
-        recognition.continuous = false; // Κλείσιμο αμέσως μετά την πρόταση
+       recognition.onresult = function(event) {
+        const result = event.results[0][0].transcript;
+        document.getElementById('order-text').value = result;
+        
+        // 1. Σταματάμε την αναγνώριση
+        recognition.stop(); 
+        
+        // 2. Η "μαγική" εντολή για το iPhone: Καταστρέφουμε το αντικείμενο 
+        // για να σβήσει η πορτοκαλί τελεία αμέσως.
+        setTimeout(() => {
+            recognition = null; 
+        }, 100);
 
-        recognition.onstart = function() {
-            const btn = document.querySelector('.btn-mic');
-            btn.style.background = "#ff4444";
-            btn.innerText = "🔴 Σας ακούω...";
-        };
+        // 3. Αυτόματη αποστολή
+        setTimeout(() => {
+            sendToTelegram();
+        }, 800);
+    };
 
-        recognition.onresult = function(event) {
-            const result = event.results[0][0].transcript;
-            document.getElementById('order-text').value = result;
-            
-            // ΚΛΕΙΣΕ ΤΟ ΜΙΚΡΟΦΩΝΟ ΑΜΕΣΩΣ (για να φύγει η τελεία)
-            recognition.stop();
-            
-            // ΑΥΤΟΜΑΤΗ ΑΠΟΣΤΟΛΗ ΜΕΤΑ ΑΠΟ 1 ΔΕΥΤΕΡΟΛΕΠΤΟ
-            setTimeout(() => {
-                sendToTelegram();
-            }, 1000);
-        };
+    function sendToTelegram() {
+        const text = document.getElementById('order-text').value;
+        if (!text || text === "...") return;
+
+        // Κλείνουμε κάθε πιθανότητα να μείνει ανοιχτό το μικρόφωνο
+        if (recognition) recognition.abort();
+
+        const message = `🎙️ ΦΩΝΗΤΙΚΗ ΠΑΡΑΓΓΕΛΙΑ\n📍 Τραπέζι: ${table}\n💬: ${text}`;
+
+        fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`)
+        .then(response => {
+            // Με το reload, η σελίδα φρεσκάρεται και το μικρόφωνο ΠΡΕΠΕΙ να σβήσει
+            document.body.innerHTML = "<div style='text-align:center;padding:50px;'><h1>🚀 Εστάλη!</h1><p>Παρακαλώ περιμένετε...</p></div>";
+            setTimeout(() => { location.reload(); }, 2000);
+        });
+    }
 
         recognition.onend = function() {
             const btn = document.querySelector('.btn-mic');
@@ -97,6 +109,7 @@
     
 </body>
 </html>
+
 
 
 
