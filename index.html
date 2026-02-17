@@ -119,36 +119,58 @@
     const table = urlParams.get('table') || "Άγνωστο";
     document.getElementById('table-num').innerText = table;
 
+    // --- ΡΥΘΜΙΣΕΙΣ ΓΕΩΕΝΤΟΠΙΣΜΟΥ ---
+    const STORE_LAT = 37.9838; // Βάλε εδώ το Latitude του μαγαζιού
+    const STORE_LON = 23.7275; // Βάλε εδώ το Longitude του μαγαζιού
+    const MAX_DISTANCE = 0.1;  // Απόσταση ασφαλείας (0.1 = 100 μέτρα)
+
     let recognition;
     let isRecording = false;
 
+    // Συνάρτηση υπολογισμού απόστασης (Haversine Formula)
+    function checkLocation(callback) {
+        if (!navigator.geolocation) {
+            alert("Ο γεωεντοπισμός δεν υποστηρίζεται. Δοκιμάστε άλλον browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition((position) => {
+            const R = 6371; 
+            const dLat = (position.coords.latitude - STORE_LAT) * Math.PI / 180;
+            const dLon = (position.coords.longitude - STORE_LON) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(STORE_LAT * Math.PI / 180) * Math.cos(position.coords.latitude * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c;
+
+            if (distance <= MAX_DISTANCE) {
+                callback(); // Αν είναι κοντά, εκτέλεσε την αποστολή
+            } else {
+                alert("Πρέπει να βρίσκεστε στο κατάστημα για να στείλετε παραγγελία!");
+            }
+        }, () => {
+            alert("Παρακαλώ ενεργοποιήστε την τοποθεσία στο κινητό σας για να παραγγείλετε.");
+        });
+    }
+
+    // --- ΟΙ ΔΙΚΕΣ ΣΟΥ ΣΥΝΑΡΤΗΣΕΙΣ (ΧΩΡΙΣ ΑΛΛΑΓΕΣ ΣΤΗ ΛΟΓΙΚΗ) ---
     function toggleMic() {
         const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
         if (!SpeechRecognition) return alert("Ο browser δεν υποστηρίζει φωνή.");
-
         if (!isRecording) {
             recognition = new SpeechRecognition();
             recognition.lang = "el-GR";
             recognition.interimResults = true;
             recognition.continuous = true;
-
-            recognition.onstart = () => {
-                isRecording = true;
-                updateMicUI(true);
-            };
-
+            recognition.onstart = () => { isRecording = true; updateMicUI(true); };
             recognition.onresult = (event) => {
                 let text = "";
-                for (let i = 0; i < event.results.length; i++) {
-                    text += event.results[i][0].transcript;
-                }
+                for (let i = 0; i < event.results.length; i++) { text += event.results[i][0].transcript; }
                 document.getElementById('order-text').value = text;
             };
-
             recognition.start();
-        } else {
-            stopMic();
-        }
+        } else { stopMic(); }
     }
 
     function stopMic() {
@@ -178,25 +200,34 @@
         }
     }
 
-    function callWaiter() { sendToTelegram(`🔔 ΚΛΗΣΗ ΣΕΡΒΙΤΟΡΟΥ\n📍 Τραπέζι: ${table}`, "Ο σερβιτόρος ειδοποιήθηκε!"); }
+    // Εδώ προσθέτουμε το checkLocation πριν την αποστολή
+    function callWaiter() { 
+        checkLocation(() => {
+            sendToTelegram(`🔔 ΚΛΗΣΗ ΣΕΡΒΙΤΟΡΟΥ\n📍 Τραπέζι: ${table}`, "Ο σερβιτόρος ειδοποιήθηκε!"); 
+        });
+    }
+
     function sendOrder() {
         const text = document.getElementById('order-text').value;
         if (!text) return alert("Πείτε κάτι πρώτα!");
-        sendToTelegram(`📝 ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ\n📍 Τραπέζι: ${table}\n💬: ${text}`, "Η παραγγελία εστάλη!");
+        checkLocation(() => {
+            sendToTelegram(`📝 ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ\n📍 Τραπέζι: ${table}\n💬: ${text}`, "Η παραγγελία εστάλη!");
+        });
     }
 
     function sendToTelegram(msg, successMsg) {
         fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}`)
         .then(() => {
             document.getElementById('app').innerHTML = `
-                <div style="padding:40px 0;">
+                <div style="padding:40px 0; text-align:center;">
                     <div style="font-size:60px; margin-bottom:20px;">✅</div>
                     <h2 style="margin:0;">${successMsg}</h2>
                     <p style="color:#666;">Ευχαριστούμε πολύ!</p>
-                    <button class="btn btn-mic" onclick="location.reload()" style="margin-top:20px;">Νέα Ενέργεια</button>
+                    <button class="btn" onclick="location.reload()" style="margin-top:20px; background:#4361ee; color:white; padding:10px 20px; border:none; border-radius:10px;">Νέα Ενέργεια</button>
                 </div>`;
         });
     }
 </script>
 </body>
 </html>
+
