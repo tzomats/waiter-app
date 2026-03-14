@@ -127,15 +127,15 @@
     'el': {
         placeholder: "Πείτε την παραγγελία σας...",
         micLabel: "Ξεκινήστε την Ομιλία",
-        send: "🚀 Αποστολή",
-        callWaiter: "🔔 Κλήση Σερβιτόρου"
+        send: "Αποστολή",
+        callWaiter: "Κλήση Σερβιτόρου"
     },
     'en': {
         placeholder: "Place your order...",
         micLabel: "Start Speaking",
-        send: "🚀 Send",
-        callWaiter: "🔔 Call Waiter"
-    }
+        send: "Send",
+        callWaiter: "Call Waiter"
+    },
     'it': {
         placeholder: "Ordina qui...",
         micLabel: "Inizia a parlare",
@@ -143,7 +143,7 @@
         callWaiter: "Chiama il cameriere"
     }
 };
-
+    
 function changeLanguage(lang) {
     document.getElementById('order-text').placeholder = langData[lang].placeholder;
     document.getElementById('mic-label').innerText = langData[lang].micLabel;
