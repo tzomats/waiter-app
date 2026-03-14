@@ -95,6 +95,7 @@
     <button onclick="changeLanguage('el')" style="cursor:pointer; border:none; background:none;">🇬🇷</button>
     <button onclick="changeLanguage('en')" style="cursor:pointer; border:none; background:none;">🇬🇧</button>
     <button onclick="changeLanguage('it')" style="cursor:pointer; border:none; background:none;">🇮🇹</button>
+    <button onclick="changeLanguage('de')" style="cursor:pointer; border:none; background:none;">🇩🇪</button>    
 </div>
     <h1>Παραγγελία</h1>
 
@@ -105,13 +106,13 @@
     </button>
 
     <button class="btn btn-send" onclick="sendOrder()">
-        <span>🚀</span> Αποστολή
+        <span>🚀</span> <span id="send-label">Αποστολή</span>
     </button>
 
     <div style="height: 1px; background: #eee; margin: 20px 0;"></div>
 
     <button class="btn btn-waiter" onclick="callWaiter()">
-        <span>🔔</span> Κλήση Σερβιτόρου
+        <span>🔔</span> <span id="waiter-label">Κλήση Σερβιτόρου</span>
     </button>
 
     <div style="margin-top: 25px; text-align: center; opacity: 0.9;">
@@ -124,32 +125,20 @@
 
 <script>
     const langData = {
-    'el': {
-        placeholder: "Πείτε την παραγγελία σας...",
-        micLabel: "Ξεκινήστε την Ομιλία",
-        send: "Αποστολή",
-        callWaiter: "Κλήση Σερβιτόρου"
-    },
-    'en': {
-        placeholder: "Place your order...",
-        micLabel: "Start Speaking",
-        send: "Send",
-        callWaiter: "Call Waiter"
-    },
-    'it': {
-        placeholder: "Ordina qui...",
-        micLabel: "Inizia a parlare",
-        send: "Invia",
-        callWaiter: "Chiama il cameriere"
-    }
+    'el': { placeholder: "Πείτε την παραγγελία σας...", micLabel: "Ξεκινήστε την Ομιλία", send: "Αποστολή", callWaiter: "Κλήση Σερβιτόρου" },
+    'en': { placeholder: "Place your order...", micLabel: "Start Speaking", send: "Send", callWaiter: "Call Waiter" },
+    'it': { placeholder: "Ordina qui...", micLabel: "Inizia a parlare", send: "Invia", callWaiter: "Chiama il cameriere" },
+    'de': { placeholder: "Bestellung eingeben...", micLabel: "Sprache starten", send: "Senden", callWaiter: "Kellner rufen" }
 };
-    
+
 function changeLanguage(lang) {
+    // Αλλαγή Placeholder
     document.getElementById('order-text').placeholder = langData[lang].placeholder;
+    
+    // Αλλαγή Ετικετών (Αντικατάσταση κειμένου μόνο)
     document.getElementById('mic-label').innerText = langData[lang].micLabel;
-    // Ενημέρωση κουμπιών
-    document.querySelector('.btn-send span:last-child').innerText = langData[lang].send.replace('🚀 ', '');
-    document.querySelector('.btn-waiter span:last-child').innerText = langData[lang].callWaiter.replace('🔔 ', '');
+    document.getElementById('send-label').innerText = langData[lang].send;
+    document.getElementById('waiter-label').innerText = langData[lang].callWaiter;
 }
     
     const token = "8597389134:AAGpXgvvHgWg0SHhsQUiZF4Fsg0bq6XmoNA";
