@@ -231,9 +231,8 @@ function changeLanguage(lang) {
     // Εδώ προσθέτουμε το checkLocation πριν την αποστολή
     function callWaiter() { 
         checkLocation(() => {
-            // Το μήνυμα "Τραπέζι 1" θα μπει στον τίτλο (αν το επιτρέπει το API) 
-            // ή θα εμφανίζεται ως η πρώτη γραμμή του μηνύματος.
-            sendToTelegram(`ΤΡΑΠΕΖΙ ${table}\nΚΛΗΣΗ`, "Ο σερβιτόρος ειδοποιήθηκε! "); 
+            // Εδώ κρατάμε μόνο την κλήση για να είναι μικρό
+            sendToTelegram(`ΤΡΑΠΕΖΙ ${table}\nΚΛΗΣΗ`, "Ο σερβιτόρος ειδοποιήθηκε!"); 
         });
     }
 
@@ -241,8 +240,8 @@ function changeLanguage(lang) {
         const text = document.getElementById('order-text').value;
         if (!text) return alert("Πείτε κάτι πρώτα!");
         checkLocation(() => {
-            // Εδώ φεύγουν τα emoji και το [ΕΜ]
-            sendToTelegram(`ΤΡΑΠΕΖΙ ${table}\n${text}`, "Η παραγγελία εστάλη!");
+            // Εδώ ξαναβάζουμε το ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ χωρίς όμως emojis
+            sendToTelegram(`ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ\nΤΡΑΠΕΖΙ ${table}\n${text}`, "Η παραγγελία εστάλη!");
         });
     }
 
