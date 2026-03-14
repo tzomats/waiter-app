@@ -91,6 +91,10 @@
 
 <div class="container" id="app">
     <div class="table-info">ΤΡΑΠΕΖΙ <span id="table-num">0</span></div>
+    <div style="text-align: right; margin-bottom: 10px;">
+    <button onclick="changeLanguage('el')" style="cursor:pointer; border:none; background:none;">🇬🇷</button>
+    <button onclick="changeLanguage('en')" style="cursor:pointer; border:none; background:none;">🇬🇧</button>
+</div>
     <h1>Παραγγελία</h1>
 
     <textarea id="order-text" placeholder="Πείτε την παραγγελία σας..."></textarea>
@@ -118,6 +122,29 @@
 </div>
 
 <script>
+    const langData = {
+    'el': {
+        placeholder: "Πείτε την παραγγελία σας...",
+        micLabel: "Ξεκινήστε την Ομιλία",
+        send: "🚀 Αποστολή",
+        callWaiter: "🔔 Κλήση Σερβιτόρου"
+    },
+    'en': {
+        placeholder: "Place your order...",
+        micLabel: "Start Speaking",
+        send: "🚀 Send",
+        callWaiter: "🔔 Call Waiter"
+    }
+};
+
+function changeLanguage(lang) {
+    document.getElementById('order-text').placeholder = langData[lang].placeholder;
+    document.getElementById('mic-label').innerText = langData[lang].micLabel;
+    // Ενημέρωση κουμπιών
+    document.querySelector('.btn-send span:last-child').innerText = langData[lang].send.replace('🚀 ', '');
+    document.querySelector('.btn-waiter span:last-child').innerText = langData[lang].callWaiter.replace('🔔 ', '');
+}
+    
     const token = "8597389134:AAGpXgvvHgWg0SHhsQUiZF4Fsg0bq6XmoNA";
     const chatId = "8228642098";
     const urlParams = new URLSearchParams(window.location.search);
