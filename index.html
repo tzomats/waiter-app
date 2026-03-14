@@ -231,7 +231,9 @@ function changeLanguage(lang) {
     // Εδώ προσθέτουμε το checkLocation πριν την αποστολή
     function callWaiter() { 
         checkLocation(() => {
-            sendToTelegram(`🔔 ΚΛΗΣΗ ΣΕΡΒΙΤΟΡΟΥ\n📍 Τραπέζι: ${table}`, "Ο σερβιτόρος ειδοποιήθηκε!"); 
+            // Το μήνυμα "Τραπέζι 1" θα μπει στον τίτλο (αν το επιτρέπει το API) 
+            // ή θα εμφανίζεται ως η πρώτη γραμμή του μηνύματος.
+            sendToTelegram(`ΤΡΑΠΕΖΙ ${table}\nΚΛΗΣΗ`, "Η κλήση εστάλη!"); 
         });
     }
 
@@ -239,7 +241,8 @@ function changeLanguage(lang) {
         const text = document.getElementById('order-text').value;
         if (!text) return alert("Πείτε κάτι πρώτα!");
         checkLocation(() => {
-            sendToTelegram(`📝 ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ\n📍 Τραπέζι: ${table}\n💬: ${text}`, "Η παραγγελία εστάλη!");
+            // Εδώ φεύγουν τα emoji και το [ΕΜ]
+            sendToTelegram(`ΤΡΑΠΕΖΙ ${table}\n${text}`, "Η παραγγελία εστάλη!");
         });
     }
 
